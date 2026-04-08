@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대여 타임라인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: Pretendard, sans-serif; letter-spacing: -0.02em; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-6 text-gray-900">
+    <div class="max-w-xl mx-auto">
+        <header class="flex justify-between items-end mb-6 border-b pb-4">
+            <h1 class="text-xl font-black italic">🕒 TIMELINE</h1>
+            <a href="index.html" class="text-xs font-bold text-gray-400 hover:text-black transition">Back</a>
+        </header>
+        <div id="logList" class="space-y-2 text-xs">
+            </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzt8uXKp23Fu_9JggMFlONJmMfV8enfeaa5_5-gWz3cLhAG4L4bWBkLLotQhIHvJP9fUg/exec";
+        async function fetchLogs() {
+            const res = await fetch(`${GAS_URL}?action=getLogs`);
+            const logs = await res.json();
+            document.getElementById('logList').innerHTML = logs.map(log => `
+                <div class="bg-white px-4 py-3 rounded-lg border border-gray-100 flex justify-between items-center shadow-sm">
+                    <div class="flex flex-col gap-0.5">
+                        <div class="font-bold text-gray-900 text-sm leading-tight">${log.title}</div>
+                        <div class="text-gray-400 text-[11px]">${log.user}님이 <span class="${log.type === '대여' ? 'text-orange-600' : 'text-green-600'} font-black">${log.type}</span></div>
+                    </div>
+                    <div class="text-right text-gray-300 text-[10px] tabular-nums">${log.time}</div>
+                </div>
+            `).join('');
+        }
+        fetchLogs();
+    </script>
+</body>
+</html>

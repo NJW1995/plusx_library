@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plus X Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { DEFAULT: '#FF5722', dark: '#E64A19' } } } }
+        }
+    </script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css');
+        body { font-family: Pretendard, sans-serif; letter-spacing: -0.01em; }
+        
+        th, td { 
+            padding: 10px 12px !important; 
+            vertical-align: middle;
+            border-bottom: 1px solid #eee;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        tbody tr:nth-child(even) { background-color: #fafafa; }
+        tbody tr:hover { background-color: #f1f1f1; }
+
+        input:focus { border-color: #FF5722 !important; border-width: 1px; }
+        table { table-layout: fixed; width: 100%; border-collapse: collapse; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-white text-gray-900 min-h-screen">
+    <div class="max-w-[1000px] mx-auto p-4 md:p-8">
+        
+        <header class="flex justify-between items-baseline pb-4 border-b-2 border-gray-900 mb-6">
+            <h1 class="text-3xl font-bold tracking-tighter uppercase cursor-pointer" onclick="location.reload()">
+                <span class="text-gray-950 font-black">Plus</span> <span class="text-brand font-black">X</span> <span class="ml-1 text-gray-900 font-black">Library</span>
+            </h1>
+            <div class="flex items-center gap-4">
+                <button id="refreshBtn" onclick="fetchBooks()" class="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-brand transition tracking-widest uppercase font-black">
+                    <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><polyline points="21 3 21 8 16 8"></polyline></svg>
+                    <span>Update</span>
+                </button>
+                <a href="timeline.html" class="text-[10px] font-bold text-gray-400 hover:text-brand transition tracking-widest uppercase font-black">Timeline</a>
+            </div>
+        </header>
+
+        <div class="flex flex-col md:flex-row gap-2 mb-6">
+            <div class="md:w-1/5">
+                <input id="userName" type="text" placeholder="이름" 
+                    class="w-full border border-gray-300 bg-white px-3 py-1.5 rounded text-sm outline-none transition placeholder:text-gray-300">
+            </div>
+            <div class="flex-1">
+                <input id="searchInput" type="text" placeholder="도서 제목 또는 ID 검색" 
+                    class="w-full border border-gray-300 bg-white px-3 py-1.5 rounded text-sm outline-none transition placeholder:text-gray-300">
+            </div>
+        </div>
+
+        <div class="border-t border-gray-200 overflow-x-auto">
+            <table class="w-full min-w-[800px]">
+                <thead class="bg-gray-50 text-gray-500 text-[11px] font-bold uppercase tracking-wider">
+                    <tr>
+                        <th class="w-28 text-left">ID</th>
+                        <th class="text-left">Book Title</th>
+                        <th class="w-32 text-left">Author</th>
+                        <th class="w-24 text-left">Status</th>
+                        <th class="w-28 text-left">User</th>
+                        <th class="w-24 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="bookTableBody" class="text-[14px] text-gray-700 font-normal">
+                    <tr><td colspan="6" class="p-20 text-center text-gray-400 font-light">데이터를 불러오는 중...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzt8uXKp23Fu_9JggMFlONJmMfV8enfeaa5_5-gWz3cLhAG4L4bWBkLLotQhIHvJP9fUg/exec";
+        let allBooks = [];
+
+        async function fetchBooks() {
+            const btn = document.getElementById('refreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            btn.classList.add('text-brand');
+            icon.classList.add('animate-spin-custom');
+            
+            try {
+                const res = await fetch(`${GAS_URL}?action=getBooks`);
+                allBooks = await res.json();
+                renderBooks(allBooks);
+            } catch (e) {
+                document.getElementById('bookTableBody').innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500 font-medium">로딩 실패</td></tr>`;
+            } finally {
+                setTimeout(() => {
+                    btn.classList.remove('text-brand');
+                    icon.classList.remove('animate-spin-custom');
+                }, 500);
+            }
+        }
+
+        function renderBooks(books) {
+            const tbody = document.getElementById('bookTableBody');
+            tbody.innerHTML = books.map(book => `
+                <tr class="transition-colors">
+                    <td class="font-mono text-gray-400 text-[12px] truncate uppercase">${book.id}</td>
+                    <td class="text-gray-900 leading-tight truncate">${book.title}</td>
+                    <td class="text-gray-500 truncate text-[13px]">${book.author}</td>
+                    <td>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${book.status === '대여중' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}">
+                            ${book.status}
+                        </span>
+                    </td>
+                    <td class="text-gray-600 truncate">${book.borrower || '-'}</td>
+                    <td class="text-center">
+                        <button onclick="handleAction('${book.id}', '${book.status}', this)" 
+                                class="w-full py-1 rounded text-[11px] font-bold transition-all ${book.status === '대여중' ? 'bg-gray-800 text-white hover:bg-black' : 'border border-brand text-brand hover:bg-brand hover:text-white'}">
+                            ${book.status === '대여중' ? '반납' : '대여'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleAction(id, status, btnElement) {
+            const user = document.getElementById('userName').value.trim();
+            if (!user) return alert('성함을 입력해주세요.');
+            
+            const action = status === '대여중' ? 'return' : 'rent';
+            if (!confirm(`${action === 'rent' ? '대여' : '반납'}하시겠습니까?`)) return;
+
+            btnElement.disabled = true;
+            btnElement.innerText = "...";
+
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, id, user })
+                });
+                alert(await res.text());
+                fetchBooks();
+            } catch (e) {
+                alert("처리 중 오류가 발생했습니다.");
+                btnElement.disabled = false;
+                btnElement.innerText = status === '대여중' ? '반납' : '대여';
+            }
+        }
+
+        document.getElementById('searchInput').oninput = (e) => {
+            const val = e.target.value.toLowerCase();
+            renderBooks(allBooks.filter(b => 
+                String(b.title).toLowerCase().includes(val) || 
+                String(b.author).toLowerCase().includes(val) ||
+                String(b.id).toLowerCase().includes(val)
+            ));
+        };
+
+        fetchBooks();
+    </script>
+</body>
+</html>
