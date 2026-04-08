@@ -13,22 +13,10 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css');
         body { font-family: Pretendard, sans-serif; letter-spacing: -0.01em; }
-        
-        th, td { 
-            padding: 10px 12px !important; 
-            vertical-align: middle;
-            border-bottom: 1px solid #eee;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
+        th, td { padding: 10px 12px !important; vertical-align: middle; border-bottom: 1px solid #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         tbody tr:nth-child(even) { background-color: #fafafa; }
-        tbody tr:hover { background-color: #f1f1f1; }
-
         input:focus { border-color: #FF5722 !important; border-width: 1px; }
         table { table-layout: fixed; width: 100%; border-collapse: collapse; }
-
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin-custom { animation: spin 1s linear infinite; }
     </style>
@@ -52,7 +40,8 @@
         <section class="mb-12">
             <h2 class="text-[10px] font-black tracking-[0.2em] text-brand mb-4 uppercase italic">/ New Arrivals</h2>
             <div id="newBooksGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4 font-normal">
-                </div>
+                <div class="col-span-full py-10 text-center text-gray-400 text-xs">최신 도서를 확인하는 중...</div>
+            </div>
         </section>
 
         <section>
@@ -80,7 +69,7 @@
                         </tr>
                     </thead>
                     <tbody id="bookTableBody" class="text-gray-700 font-normal">
-                        <tr><td colspan="6" class="p-20 text-center text-gray-400 font-light">데이터를 불러오는 중...</td></tr>
+                        <tr><td colspan="6" class="p-20 text-center text-gray-400 font-light font-mono">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -88,8 +77,7 @@
     </div>
 
     <script>
-        // [중요] 본인의 웹 앱 URL로 꼭 교체하세요!
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxGxTfz8iYMG13MX_ZpVFGuamN14mJa2H4JlzTSDf0YAbvefLU-V_YylHDqpelJ6B-1mw/exec";
+        const GAS_URL = "여기에_본인의_URL_붙여넣기";
         let allBooks = [];
 
         async function fetchBooks() {
@@ -101,14 +89,18 @@
             try {
                 const res = await fetch(`${GAS_URL}?action=getBooks`);
                 const data = await res.json();
+                
                 if (data && Array.isArray(data)) {
-                    allBooks = data;
+                    // ID가 있는 유효한 데이터만 필터링 (빈 행 방지)
+                    allBooks = data.filter(b => b.id);
                     renderNewBooks(allBooks);
                     renderBooks(allBooks);
+                } else {
+                    throw new Error("데이터 형식이 올바르지 않습니다.");
                 }
             } catch (e) {
-                console.error(e);
-                document.getElementById('bookTableBody').innerHTML = `<tr><td colspan="6" class="p-10 text-center text-red-500 font-medium">로딩 실패</td></tr>`;
+                console.error("로딩 실패 상세:", e);
+                document.getElementById('bookTableBody').innerHTML = `<tr><td colspan="6" class="p-20 text-center text-red-500 font-medium">로딩 실패: ${e.message}</td></tr>`;
             } finally {
                 setTimeout(() => {
                     if(btn) btn.classList.remove('text-brand');
@@ -120,14 +112,18 @@
         function renderNewBooks(books) {
             const newGrid = document.getElementById('newBooksGrid');
             if (!newGrid) return;
-            // 최신 3권 (시트 하단 기준)
-            const latest = [...books].reverse().slice(0, 3);
+            const latest = [...books].slice(-3).reverse();
             
+            if (latest.length === 0) {
+                newGrid.innerHTML = '<div class="col-span-full py-10 text-center text-gray-400 text-xs italic">등록된 도서가 없습니다.</div>';
+                return;
+            }
+
             newGrid.innerHTML = latest.map(book => `
-                <div class="bg-gray-950 text-white p-6 rounded-sm flex flex-col justify-between min-h-[180px] shadow-xl">
+                <div class="bg-gray-950 text-white p-6 rounded-sm flex flex-col justify-between min-h-[180px] shadow-xl transition-transform hover:scale-[1.02]">
                     <div>
                         <div class="text-[9px] text-brand font-black mb-3 uppercase tracking-[0.2em] italic underline underline-offset-4">New Post</div>
-                        <h3 class="text-[15px] font-bold leading-tight mb-2 line-clamp-2 text-white">${book.title || '제목 없음'}</h3>
+                        <h3 class="text-[15px] font-bold leading-tight mb-2 line-clamp-2">${book.title || '제목 없음'}</h3>
                         <p class="text-gray-400 text-[11px] font-light leading-relaxed line-clamp-3">${book.description || '새로 입고된 도서입니다. 지금 바로 확인해보세요.'}</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
@@ -141,12 +137,18 @@
         function renderBooks(books) {
             const tbody = document.getElementById('bookTableBody');
             if (!tbody) return;
+            
+            if (books.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-20 text-center text-gray-400 font-light">목록이 비어 있습니다.</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = books.map(book => `
                 <tr class="transition-colors">
                     <td class="font-mono text-gray-400 text-[12px] truncate uppercase">${book.id}</td>
-                    <td class="text-gray-900 leading-tight truncate">${book.title}</td>
-                    <td class="text-gray-500 truncate text-[13px] font-light">${book.author}</td>
-                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${book.status === '대여중' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}">${book.status}</span></td>
+                    <td class="text-gray-900 leading-tight truncate">${book.title || '-'}</td>
+                    <td class="text-gray-500 truncate text-[13px] font-light">${book.author || '-'}</td>
+                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${book.status === '대여중' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}">${book.status || '대여가능'}</span></td>
                     <td class="text-gray-600 truncate">${book.borrower || '-'}</td>
                     <td class="text-center">
                         <button onclick="handleAction('${book.id}', '${book.status}', this)" 
@@ -179,7 +181,12 @@
 
         document.getElementById('searchInput').oninput = (e) => {
             const val = e.target.value.toLowerCase();
-            renderBooks(allBooks.filter(b => String(b.title).toLowerCase().includes(val) || String(b.author).toLowerCase().includes(val) || String(b.id).toLowerCase().includes(val)));
+            const filtered = allBooks.filter(b => 
+                String(b.title).toLowerCase().includes(val) || 
+                String(b.author).toLowerCase().includes(val) || 
+                String(b.id).toLowerCase().includes(val)
+            );
+            renderBooks(filtered);
         };
 
         fetchBooks();
