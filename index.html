@@ -91,7 +91,6 @@
                 const data = await res.json();
                 
                 if (data && Array.isArray(data)) {
-                    // ID가 있는 유효한 데이터만 필터링 (빈 행 방지)
                     allBooks = data.filter(b => b.id);
                     renderNewBooks(allBooks);
                     renderBooks(allBooks);
@@ -109,6 +108,7 @@
             }
         }
 
+        // --- 수정된 부분: 최신 도서 렌더링 시 텍스트 시인성 강화 ---
         function renderNewBooks(books) {
             const newGrid = document.getElementById('newBooksGrid');
             if (!newGrid) return;
@@ -120,15 +120,15 @@
             }
 
             newGrid.innerHTML = latest.map(book => `
-                <div class="bg-gray-950 text-white p-6 rounded-sm flex flex-col justify-between min-h-[180px] shadow-xl transition-transform hover:scale-[1.02]">
+                <div class="bg-gray-950 text-white p-6 rounded-sm flex flex-col justify-between min-h-[190px] shadow-2xl transition-transform hover:scale-[1.02] border border-gray-800">
                     <div>
                         <div class="text-[9px] text-brand font-black mb-3 uppercase tracking-[0.2em] italic underline underline-offset-4">New Book</div>
-                        <h3 class="text-[15px] font-bold leading-tight mb-2 line-clamp-2">${book.title || '제목 없음'}</h3>
-                        <p class="text-gray-400 text-[11px] font-light leading-relaxed line-clamp-3">${book.description || '새로 입고된 도서입니다. 지금 바로 확인해보세요.'}</p>
+                        <h3 class="text-[16px] font-bold leading-tight mb-2 line-clamp-2 text-white">${book.title || '제목 없음'}</h3>
+                        <p class="text-gray-200 text-[12px] font-normal leading-relaxed line-clamp-3 opacity-90">${book.description || '새로 입고된 도서입니다. 지금 바로 확인해보세요.'}</p>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
-                        <span class="truncate w-2/3">${book.author || '저자 미상'}</span>
-                        <span class="${book.status === '대여가능' ? 'text-green-500' : 'text-brand'}">${book.status}</span>
+                    <div class="mt-5 pt-4 border-t border-gray-800 flex justify-between items-center text-[11px] font-bold uppercase tracking-tighter">
+                        <span class="truncate w-2/3 text-gray-300">${book.author || '저자 미상'}</span>
+                        <span class="${book.status === '대여가능' ? 'text-green-400' : 'text-brand'}">${book.status}</span>
                     </div>
                 </div>
             `).join('');
